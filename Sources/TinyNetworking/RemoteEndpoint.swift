@@ -15,7 +15,7 @@ public struct Endpoint<A> {
     }
     
     var request: URLRequest
-    var parse: (Data?) -> A?
+    var parse: (Data?) -> Result<A, Error>
     var expectedStatusCode: (Int) -> Bool = expected200to300
     
     public func map<B>(_ f: @escaping (A) -> B) -> Endpoint<B> {
@@ -24,13 +24,13 @@ public struct Endpoint<A> {
         })
     }
 
-    public func compactMap<B>(_ transform: @escaping (A) -> B?) -> Endpoint<B> {
+    public func compactMap<B>(_ transform: @escaping (A) -> Result<B, Error>) -> Endpoint<B> {
         return Endpoint<B>(request: request, expectedStatusCode: expectedStatusCode, parse: { data in
             self.parse(data).flatMap(transform)
         })
     }
 
-    public init(_ method: Method, url: URL, accept: ContentType? = nil, contentType: ContentType? = nil, body: Data? = nil, headers: [String:String] = [:], expectedStatusCode: @escaping (Int) -> Bool, timeOutInterval: TimeInterval = 10, query: [String:String] = [:], parse: @escaping (Data?) -> A?) {
+    public init(_ method: Method, url: URL, accept: ContentType? = nil, contentType: ContentType? = nil, body: Data? = nil, headers: [String:String] = [:], expectedStatusCode: @escaping (Int) -> Bool, timeOutInterval: TimeInterval = 10, query: [String:String] = [:], parse: @escaping (Data?) -> Result<A, Error>) {
         var comps = URLComponents(string: url.absoluteString)!
         comps.queryItems = query.map { URLQueryItem(name: $0.0, value: $0.1) }
         request = URLRequest(url: comps.url!)
@@ -50,10 +50,10 @@ public struct Endpoint<A> {
         request.httpBody = body
 
         self.expectedStatusCode = expectedStatusCode
-        self.parse = { $0.flatMap(parse) }
+        self.parse = parse
     }
     
-    public init(request: URLRequest, expectedStatusCode: @escaping (Int) -> Bool, parse: @escaping (Data?) -> A?) {
+    public init(request: URLRequest, expectedStatusCode: @escaping (Int) -> Bool, parse: @escaping (Data?) -> Result<A, Error>) {
         self.request = request
         self.expectedStatusCode = expectedStatusCode
         self.parse = parse
@@ -80,12 +80,12 @@ extension Endpoint.Method {
 
 extension Endpoint where A == () {
     public init(_ method: Method, url: URL, accept: ContentType? = nil, headers: [String:String] = [:], expectedStatusCode: @escaping (Int) -> Bool = expected200to300, query: [String:String] = [:]) {
-        self.init(method, url: url, accept: accept, headers: headers, expectedStatusCode: expectedStatusCode, query: query, parse: { _ in () })
+        self.init(method, url: url, accept: accept, headers: headers, expectedStatusCode: expectedStatusCode, query: query, parse: { _ in .success(()) })
     }
 
     public init<B: Codable>(json method: Method, url: URL, accept: ContentType? = .json, body: B, headers: [String:String] = [:], expectedStatusCode: @escaping (Int) -> Bool = expected200to300, query: [String:String] = [:]) {
         let b = try! JSONEncoder().encode(body)
-        self.init(method, url: url, accept: accept, contentType: .json, body: b, headers: headers, expectedStatusCode: expectedStatusCode, query: query, parse: { _ in () })
+        self.init(method, url: url, accept: accept, contentType: .json, body: b, headers: headers, expectedStatusCode: expectedStatusCode, query: query, parse: { _ in .success(()) })
     }
 }
 
@@ -93,34 +93,44 @@ extension Endpoint where A: Decodable {
     public init(json method: Method, url: URL, accept: ContentType = .json, headers: [String: String] = [:], expectedStatusCode: @escaping (Int) -> Bool = expected200to300, query: [String: String] = [:], decoder: JSONDecoder? = nil) {
         let d = decoder ?? JSONDecoder()
         self.init(method, url: url, accept: accept, body: nil, headers: headers, expectedStatusCode: expectedStatusCode, query: query) { data in
-            guard let dat = data else { return nil }
-            return try? d.decode(A.self, from: dat)
+            return Result {
+                guard let dat = data else { throw NoDataError() }
+                return try d.decode(A.self, from: dat)
+            }
         }
     }
 
     public init<B: Codable>(json method: Method, url: URL, accept: ContentType = .json, body: B? = nil, headers: [String: String] = [:], expectedStatusCode: @escaping (Int) -> Bool = expected200to300, query: [String: String] = [:]) {
         let b = body.map { try! JSONEncoder().encode($0) }
         self.init(method, url: url, accept: accept, contentType: .json, body: b, headers: headers, expectedStatusCode: expectedStatusCode, query: query) { data in
-            guard let dat = data else { return nil }
-            return try? JSONDecoder().decode(A.self, from: dat)
+            return Result {
+                guard let dat = data else { throw NoDataError() }
+                return try JSONDecoder().decode(A.self, from: dat)
+            }
         }
     }
 }
 
-public protocol URLSessionProtocol {
-    func load<A>(_ e: Endpoint<A>, failure: @escaping (Error?, URLResponse?) -> (), onComplete: @escaping (A?) -> ())
-    func onDelegateQueue(_ f: @escaping () -> ())
+public struct NoDataError: Error {}
+public struct UnknownError: Error {}
+public struct WrongStatusCodeError: Error {
+    public let statusCode: Int
 }
 
-extension URLSession: URLSessionProtocol {}
-
 extension URLSession {
-    public func load<A>(_ e: Endpoint<A>, failure: @escaping (Error?, URLResponse?) -> (), onComplete: @escaping (A?) -> ()) {
+    public func load<A>(_ e: Endpoint<A>, onComplete: @escaping (Result<A, Error>) -> ()) {
         let r = e.request
         dataTask(with: r, completionHandler: { data, resp, err in
-            guard let h = resp as? HTTPURLResponse, e.expectedStatusCode(h.statusCode) else {
-                failure(err, resp); return
+            guard let h = resp as? HTTPURLResponse else {
+                onComplete(.failure(UnknownError()))
+                return
             }
+            
+            guard e.expectedStatusCode(h.statusCode) else {
+                onComplete(.failure(WrongStatusCodeError(statusCode: h.statusCode)))
+                return
+            }
+            
             onComplete(e.parse(data))
         }).resume()
     }
