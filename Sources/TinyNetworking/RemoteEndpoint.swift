@@ -32,7 +32,8 @@ public struct Endpoint<A> {
 
     public init(_ method: Method, url: URL, accept: ContentType? = nil, contentType: ContentType? = nil, body: Data? = nil, headers: [String:String] = [:], expectedStatusCode: @escaping (Int) -> Bool, timeOutInterval: TimeInterval = 10, query: [String:String] = [:], parse: @escaping (Data?) -> Result<A, Error>) {
         var comps = URLComponents(string: url.absoluteString)!
-        comps.queryItems = query.map { URLQueryItem(name: $0.0, value: $0.1) }
+        comps.queryItems = comps.queryItems ?? []
+        comps.queryItems!.append(contentsOf: query.map { URLQueryItem(name: $0.0, value: $0.1) })
         request = URLRequest(url: comps.url!)
         if let a = accept {
             request.setValue(a.rawValue, forHTTPHeaderField: "Accept")
