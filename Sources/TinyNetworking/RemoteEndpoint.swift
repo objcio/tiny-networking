@@ -118,10 +118,11 @@ public struct WrongStatusCodeError: Error {
     public let statusCode: Int
 }
 
-extension URLSession {
-    public func load<A>(_ e: Endpoint<A>, onComplete: @escaping (Result<A, Error>) -> ()) {
+extension URLSession {    
+    @discardableResult
+    public func load<A>(_ e: Endpoint<A>, onComplete: @escaping (Result<A, Error>) -> ()) -> URLSessionDataTask {
         let r = e.request
-        dataTask(with: r, completionHandler: { data, resp, err in
+        let task = dataTask(with: r, completionHandler: { data, resp, err in
             guard let h = resp as? HTTPURLResponse else {
                 onComplete(.failure(UnknownError()))
                 return
@@ -133,7 +134,9 @@ extension URLSession {
             }
             
             onComplete(e.parse(data))
-        }).resume()
+        })
+        task.resume()
+        return task
     }
 
     public func onDelegateQueue(_ f: @escaping () -> ()) {
