@@ -14,7 +14,7 @@ public struct Endpoint<A> {
         case get, post, put, patch
     }
     
-    var request: URLRequest
+    public var request: URLRequest
     var parse: (Data?) -> Result<A, Error>
     var expectedStatusCode: (Int) -> Bool = expected200to300
     
@@ -30,7 +30,7 @@ public struct Endpoint<A> {
         })
     }
 
-    public init(_ method: Method, url: URL, accept: ContentType? = nil, contentType: ContentType? = nil, body: Data? = nil, headers: [String:String] = [:], expectedStatusCode: @escaping (Int) -> Bool, timeOutInterval: TimeInterval = 10, query: [String:String] = [:], parse: @escaping (Data?) -> Result<A, Error>) {
+    public init(_ method: Method, url: URL, accept: ContentType? = nil, contentType: ContentType? = nil, body: Data? = nil, headers: [String:String] = [:], expectedStatusCode: @escaping (Int) -> Bool = expected200to300, timeOutInterval: TimeInterval = 10, query: [String:String] = [:], parse: @escaping (Data?) -> Result<A, Error>) {
         var comps = URLComponents(string: url.absoluteString)!
         comps.queryItems = comps.queryItems ?? []
         comps.queryItems!.append(contentsOf: query.map { URLQueryItem(name: $0.0, value: $0.1) })
@@ -54,7 +54,7 @@ public struct Endpoint<A> {
         self.parse = parse
     }
     
-    public init(request: URLRequest, expectedStatusCode: @escaping (Int) -> Bool, parse: @escaping (Data?) -> Result<A, Error>) {
+    public init(request: URLRequest, expectedStatusCode: @escaping (Int) -> Bool = expected200to300, parse: @escaping (Data?) -> Result<A, Error>) {
         self.request = request
         self.expectedStatusCode = expectedStatusCode
         self.parse = parse
