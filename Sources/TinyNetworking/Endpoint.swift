@@ -112,10 +112,15 @@ extension Endpoint where A: Decodable {
     }
 }
 
-public struct NoDataError: Error {}
-public struct UnknownError: Error {}
+public struct NoDataError: Error {
+    public init() { }
+}
+public struct UnknownError: Error {
+    public init() { }
+}
 public struct WrongStatusCodeError: Error {
     public let statusCode: Int
+    public init(statusCode: Int) { self.statusCode = statusCode }
 }
 
 extension URLSession {    
