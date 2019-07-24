@@ -4,7 +4,7 @@ This package contains a tiny networking library. It provides a struct `Endpoint`
 
 ## A Simple Endpoint
 
-This is an endpoint that represents a user's data (note that there are more fields in the JSON, we left those out for brevity):
+This is an endpoint that represents a user's data (note that there are more fields in the JSON, left out for brevity):
 
 ```swift
 struct User: Codable {
@@ -61,7 +61,7 @@ The JSON encoding and decoding are added as conditional extensions on top of the
 var parse: (Data?, URLResponse?) -> Result<A, Error>
 ```
 
-This means that we can write our own functionality on top. For example, here's a resource that parses images:
+Having `Data` as the input means that you can write our own functionality on top. For example, here's a resource that parses images:
 
 ```swift
 struct ImageError: Error {}
@@ -78,11 +78,11 @@ extension Endpoint where A == UIImage {
 }
 ```
 
-You can also write extension that do custom JSON serialization, or parse XML, or another format.
+You can also write extensions that do custom JSON serialization, or parse XML, or another format.
 
 ## Testing Endpoints
 
-Because an `Endpoint` is a plain struct, it's easy to test synchronously without a network connection. For example, we can test the image endpoint like this:
+Because an `Endpoint` is a plain struct, it's easy to test synchronously without a network connection. For example, you can test the image endpoint like this:
 
 ```swift
 XCTAssertThrows(try Endpoint(imageURL: someURL).parse(nil, nil).get())
@@ -96,8 +96,9 @@ XCTAssertNoThrow(try Endpoint(imageURL: someURL).parse(validData, nil).get())
 
 ## More Documentation
 
-We have covered the building of this library extensively on [Swift Talk](http://talk.objc.io/). There's a collection with all the relevant episodes:
-
-<img src="https://talk.objc.io/assets/images/collections/Networking.svg">
+The design and implementation of this library is covered extensively on [Swift Talk](http://talk.objc.io/). There's a collection with all the relevant episodes:
 
 **[Networking](https://talk.objc.io/collections/networking)**
+
+[<img src="https://talk.objc.io/assets/images/collections/Networking.svg">](https://talk.objc.io/collections/networking)
+
