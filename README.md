@@ -99,4 +99,5 @@ XCTAssertNoThrow(try Endpoint(imageURL: someURL).parse(validData, nil).get())
 We have covered the building of this library extensively on [Swift Talk](http://talk.objc.io/). There's a collection with all the relevant episodes:
 
 <img src="https://talk.objc.io/assets/images/collections/Networking.svg">
+
 **[Networking](https://talk.objc.io/collections/networking)**
