@@ -20,6 +20,7 @@ public struct Endpoint<A> {
         case post = "POST"
         case put = "PUT"
         case patch = "PATCH"
+        case delete = "DELETE"
     }
     
     /// The request for this endpoint
