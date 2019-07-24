@@ -96,6 +96,7 @@ public struct Endpoint<A> {
     }
 }
 
+// MARK: - CustomStringConvertible
 extension Endpoint: CustomStringConvertible {
     public var description: String {
         let data = request.httpBody ?? Data()
@@ -103,6 +104,7 @@ extension Endpoint: CustomStringConvertible {
     }
 }
 
+// MARK: - where A == ()
 extension Endpoint where A == () {
     /// Creates a new endpoint without a parse function.
     ///
@@ -133,6 +135,7 @@ extension Endpoint where A == () {
     }
 }
 
+// MARK: - where A: Decodable
 extension Endpoint where A: Decodable {
     /// Creates a new endpoint.
     ///
