@@ -93,3 +93,10 @@ XCTAssertNoThrow(try Endpoint(imageURL: someURL).parse(validData, nil).get())
 ## More Examples
 
 - In the [Swift Talk](https://talk.objc.io) backend, this is used to wrap [third-party services](https://github.com/objcio/swift-talk-backend/tree/master/Sources/SwiftTalkServerLib/ThirdPartyServices).
+
+## More Documentation
+
+We have covered the building of this library extensively on [Swift Talk](http://talk.objc.io/). There's a collection with all the relevant episodes:
+
+<img src="https://talk.objc.io/assets/images/collections/Networking.svg">
+**[Networking](https://talk.objc.io/collections/networking)**
