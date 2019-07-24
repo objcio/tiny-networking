@@ -1,6 +1,8 @@
 # TinyNetworking
 
-This package contains a tiny networking library. It provides a struct `Endpoint`, which combines a URL request and a way to parse responses for that request. Here are some examples:
+This package contains a tiny networking library. It provides a struct `Endpoint`, which combines a URL request and a way to parse responses for that request. Because `Endpoint` is generic over the parse result, it provides a type-safe way to use HTTP endpoints.
+
+Here are some examples:
 
 ## A Simple Endpoint
 
