@@ -60,10 +60,16 @@ public struct Endpoint<A> {
     ///   - query: query parameters to append to the url
     ///   - parse: this converts a response into an `A`.
     public init(_ method: Method, url: URL, accept: ContentType? = nil, contentType: ContentType? = nil, body: Data? = nil, headers: [String:String] = [:], expectedStatusCode: @escaping (Int) -> Bool = expected200to300, timeOutInterval: TimeInterval = 10, query: [String:String] = [:], parse: @escaping (Data?, URLResponse?) -> Result<A, Error>) {
-        var comps = URLComponents(string: url.absoluteString)!
-        comps.queryItems = comps.queryItems ?? []
-        comps.queryItems!.append(contentsOf: query.map { URLQueryItem(name: $0.0, value: $0.1) })
-        request = URLRequest(url: comps.url!)
+        var requestUrl : URL
+        if query.isEmpty {
+            requestUrl = url
+        } else {
+            var comps = URLComponents(url: url, resolvingAgainstBaseURL: true)!
+            comps.queryItems = comps.queryItems ?? []
+            comps.queryItems!.append(contentsOf: query.map { URLQueryItem(name: $0.0, value: $0.1) })
+            requestUrl = comps.url!
+        }
+        request = URLRequest(url: requestUrl)
         if let a = accept {
             request.setValue(a.rawValue, forHTTPHeaderField: "Accept")
         }
