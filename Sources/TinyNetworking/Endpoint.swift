@@ -210,6 +210,11 @@ extension URLSession {
     public func load<A>(_ e: Endpoint<A>, onComplete: @escaping (Result<A, Error>) -> ()) -> URLSessionDataTask {
         let r = e.request
         let task = dataTask(with: r, completionHandler: { data, resp, err in
+            if let err = err {
+                onComplete(.failure(err))
+                return
+            }
+            
             guard let h = resp as? HTTPURLResponse else {
                 onComplete(.failure(UnknownError()))
                 return
