@@ -50,6 +50,9 @@ final class URLSessionIntegrationTests: XCTestCase {
                 XCTFail("Expected an Error in Result.")
             case let .failure(error):
                 XCTAssertNotNil(error as? WrongStatusCodeError)
+                if let error = error as? WrongStatusCodeError {
+                    XCTAssertNotNil(error.responseBody)
+                }
                 expectation.fulfill()
             }
         }
