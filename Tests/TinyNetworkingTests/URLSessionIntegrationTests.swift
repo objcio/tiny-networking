@@ -17,7 +17,7 @@ final class URLSessionIntegrationTests: XCTestCase {
 
         TinyHTTPStubURLProtocol.urls[url] = StubbedResponse(response: HTTPURLResponse(url: url, statusCode: 200, httpVersion: nil, headerFields: nil)!, data: exampleJSON.data(using: .utf8)!)
 
-        let endpoint = Endpoint<[Person]>(json: .get, url: url)
+        let endpoint = Endpoint<[Person]>(json: .get, url: url)!
         let expectation = self.expectation(description: "Stubbed network call")
 
         let task = URLSession.shared.load(endpoint) { result in

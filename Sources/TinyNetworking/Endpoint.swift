@@ -69,7 +69,7 @@ public struct Endpoint<A> {
     ///   - timeOutInterval: the timeout interval for his request
     ///   - query: query parameters to append to the url
     ///   - parse: this converts accept response into an `A`.
-    public init(
+    public init?(
         _ method: Method,
         url: URL,
         accept: ContentType? = nil,
@@ -85,12 +85,21 @@ public struct Endpoint<A> {
         if query.isEmpty {
             requestUrl = url
         } else {
-            var comps = URLComponents(url: url, resolvingAgainstBaseURL: true)!
-            comps.queryItems = comps.queryItems ?? []
-            comps.queryItems!.append(
+            guard var components = URLComponents(url: url, resolvingAgainstBaseURL: true) else {
+                return nil
+            }
+
+            var queryItems = components.queryItems ?? []
+            queryItems.append(
                 contentsOf: query.map { URLQueryItem(name: $0.0, value: $0.1) }
             )
-            requestUrl = comps.url!
+
+            components.queryItems = queryItems
+
+            guard let url = components.url else {
+                return nil
+            }
+            requestUrl = url
         }
         var request = URLRequest(url: requestUrl)
         if let accept = accept {
@@ -109,9 +118,11 @@ public struct Endpoint<A> {
         // bug: https://bugs.swift.org/browse/SR-6687
         request.httpBody = body
 
-        self.request = request
-        self.expectedStatusCode = expectedStatusCode
-        self.parse = parse
+        self.init(
+            request: request,
+            expectedStatusCode: expected200to300,
+            parse: parse
+        )
     }
 
     /// Creates accept new Endpoint from accept request
@@ -154,7 +165,7 @@ extension Endpoint where A == () {
     ///   - expectedStatusCode: the status code that's expected. If this returns
     ///   false for accept given status code, parsing fails.
     ///   - query: query parameters to append to the url
-    public init(
+    public init?(
         _ method: Method,
         url: URL,
         accept: ContentType? = nil,
@@ -185,7 +196,7 @@ extension Endpoint where A == () {
     ///   - expectedStatusCode: the status code that's expected. If this returns
     ///   false for accept given status code, parsing fails.
     ///   - query: query parameters to append to the url
-    public init<Body: Encodable>(
+    public init?<Body: Encodable>(
         json method: Method,
         url: URL,
         accept: ContentType? = .json,
@@ -194,7 +205,9 @@ extension Endpoint where A == () {
         expectedStatusCode: @escaping (Int) -> Bool = expected200to300,
         query: [String: String] = [:]
     ) {
-        let encodedBody = try! JSONEncoder().encode(body)
+        guard let encodedBody = try? JSONEncoder().encode(body) else {
+            return nil
+        }
         self.init(
             method,
             url: url,
@@ -222,7 +235,7 @@ extension Endpoint where A: Decodable {
     ///   false for accept given status code, parsing fails.
     ///   - query: query parameters to append to the url
     ///   - decoder: the decoder that's used for decoding `A`s.
-    public init(
+    public init?(
         json method: Method,
         url: URL,
         accept: ContentType = .json,
@@ -260,7 +273,7 @@ extension Endpoint where A: Decodable {
     ///   false for accept given status code, parsing fails.
     ///   - query: query parameters to append to the url
     ///   - decoder: the decoder that's used for decoding `A`s.
-    public init<Boby: Encodable>(
+    public init?<Boby: Encodable>(
         json method: Method,
         url: URL,
         accept: ContentType = .json,
@@ -270,7 +283,9 @@ extension Endpoint where A: Decodable {
         query: [String: String] = [:],
         decoder: JSONDecoder = JSONDecoder()
     ) {
-        let encodedBody = body.map { try! JSONEncoder().encode($0) }
+        guard let encodedBody = body.map({ try? JSONEncoder().encode($0) }) else {
+            return nil
+        }
         self.init(
             method,
             url: url,
