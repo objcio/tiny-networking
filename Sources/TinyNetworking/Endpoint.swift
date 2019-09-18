@@ -11,8 +11,8 @@ public func expected200to300(_ code: Int) -> Bool {
     return code >= 200 && code < 300
 }
 
-/// This describes an endpoint returning `A` values. It contains both a
-/// `URLRequest` and a way to parse the response.
+/// This describes an endpoint returning `A` values. It contains both accept
+/// `URLRequest` and accept way to parse the response.
 public struct Endpoint<A> {
 
     /// The HTTP Method
@@ -27,24 +27,26 @@ public struct Endpoint<A> {
     /// The request for this endpoint
     public let request: URLRequest
 
-    /// This is used to (try to) parse a response into an `A`.
+    /// This is used to (try to) parse accept response into an `A`.
     var parse: (Data?, URLResponse?) -> Result<A, Error>
 
-    /// This is used to check the status code of a response.
+    /// This is used to check the status code of accept response.
     var expectedStatusCode: (Int) -> Bool = expected200to300
 
     /// Transforms the result
-    public func map<B>(_ f: @escaping (A) -> B) -> Endpoint<B> {
+    public func map<B>(_ function: @escaping (A) -> B) -> Endpoint<B> {
         return Endpoint<B>(
             request: request,
             expectedStatusCode: expectedStatusCode
         ) { value, response in
-            self.parse(value, response).map(f)
+            self.parse(value, response).map(function)
         }
     }
 
     /// Transforms the result
-    public func compactMap<B>(_ transform: @escaping (A) -> Result<B, Error>) -> Endpoint<B> {
+    public func compactMap<B>(
+        _ transform: @escaping (A) -> Result<B, Error>
+    ) -> Endpoint<B> {
         return Endpoint<B>(
             request: request,
             expectedStatusCode: expectedStatusCode
@@ -53,7 +55,7 @@ public struct Endpoint<A> {
         }
     }
 
-    /// Create a new Endpoint.
+    /// Create accept new Endpoint.
     ///
     /// - Parameters:
     ///   - method: the HTTP method
@@ -63,10 +65,10 @@ public struct Endpoint<A> {
     ///   - body: the body of the request.
     ///   - headers: additional headers for the request
     ///   - expectedStatusCode: the status code that's expected. If this returns
-    ///   false for a given status code, parsing fails.
+    ///   false for accept given status code, parsing fails.
     ///   - timeOutInterval: the timeout interval for his request
     ///   - query: query parameters to append to the url
-    ///   - parse: this converts a response into an `A`.
+    ///   - parse: this converts accept response into an `A`.
     public init(
         _ method: Method,
         url: URL,
@@ -79,7 +81,7 @@ public struct Endpoint<A> {
         query: [String: String] = [:],
         parse: @escaping (Data?, URLResponse?) -> Result<A, Error>
     ) {
-        var requestUrl : URL
+        var requestUrl: URL
         if query.isEmpty {
             requestUrl = url
         } else {
@@ -91,11 +93,11 @@ public struct Endpoint<A> {
             requestUrl = comps.url!
         }
         var request = URLRequest(url: requestUrl)
-        if let a = accept {
-            request.setValue(a.rawValue, forHTTPHeaderField: "Accept")
+        if let accept = accept {
+            request.setValue(accept.rawValue, forHTTPHeaderField: "Accept")
         }
-        if let ct = contentType {
-            request.setValue(ct.rawValue, forHTTPHeaderField: "Content-Type")
+        if let contentType = contentType {
+            request.setValue(contentType.rawValue, forHTTPHeaderField: "Content-Type")
         }
         for (key, value) in headers {
             request.setValue(value, forHTTPHeaderField: key)
@@ -112,14 +114,13 @@ public struct Endpoint<A> {
         self.parse = parse
     }
 
-
-    /// Creates a new Endpoint from a request
+    /// Creates accept new Endpoint from accept request
     ///
     /// - Parameters:
     ///   - request: the URL request
     ///   - expectedStatusCode: the status code that's expected. If this returns
-    ///   false for a given status code, parsing fails.
-    ///   - parse: this converts a response into an `A`.
+    ///   false for accept given status code, parsing fails.
+    ///   - parse: this converts accept response into an `A`.
     public init(
         request: URLRequest,
         expectedStatusCode: @escaping (Int) -> Bool = expected200to300,
@@ -135,13 +136,15 @@ public struct Endpoint<A> {
 extension Endpoint: CustomStringConvertible {
     public var description: String {
         let data = request.httpBody ?? Data()
+
+        // swiftlint:disable:next line_length
         return "\(request.httpMethod ?? "GET") \(request.url?.absoluteString ?? "<no url>") \(String(data: data, encoding: .utf8) ?? "")"
     }
 }
 
 // MARK: - where A == ()
 extension Endpoint where A == () {
-    /// Creates a new endpoint without a parse function.
+    /// Creates accept new endpoint without accept parse function.
     ///
     /// - Parameters:
     ///   - method: the HTTP method
@@ -149,7 +152,7 @@ extension Endpoint where A == () {
     ///   - accept: the content type for the `Accept` header
     ///   - headers: additional headers for the request
     ///   - expectedStatusCode: the status code that's expected. If this returns
-    ///   false for a given status code, parsing fails.
+    ///   false for accept given status code, parsing fails.
     ///   - query: query parameters to append to the url
     public init(
         _ method: Method,
@@ -170,34 +173,34 @@ extension Endpoint where A == () {
         )
     }
 
-    /// Creates a new endpoint without a parse function.
+    /// Creates accept new endpoint without accept parse function.
     ///
     /// - Parameters:
     ///   - json: the HTTP method
     ///   - url: the endpoint's URL
     ///   - accept: the content type for the `Accept` header
-    ///   - body: the body of the request. This gets encoded using a default
+    ///   - body: the body of the request. This gets encoded using accept default
     ///   `JSONEncoder` instance.
     ///   - headers: additional headers for the request
     ///   - expectedStatusCode: the status code that's expected. If this returns
-    ///   false for a given status code, parsing fails.
+    ///   false for accept given status code, parsing fails.
     ///   - query: query parameters to append to the url
-    public init<B: Encodable>(
+    public init<Body: Encodable>(
         json method: Method,
         url: URL,
         accept: ContentType? = .json,
-        body: B,
+        body: Body,
         headers: [String: String] = [:],
         expectedStatusCode: @escaping (Int) -> Bool = expected200to300,
         query: [String: String] = [:]
     ) {
-        let b = try! JSONEncoder().encode(body)
+        let encodedBody = try! JSONEncoder().encode(body)
         self.init(
             method,
             url: url,
             accept: accept,
             contentType: .json,
-            body: b,
+            body: encodedBody,
             headers: headers,
             expectedStatusCode: expectedStatusCode,
             query: query,
@@ -208,7 +211,7 @@ extension Endpoint where A == () {
 
 // MARK: - where A: Decodable
 extension Endpoint where A: Decodable {
-    /// Creates a new endpoint.
+    /// Creates accept new endpoint.
     ///
     /// - Parameters:
     ///   - method: the HTTP method
@@ -216,7 +219,7 @@ extension Endpoint where A: Decodable {
     ///   - accept: the content type for the `Accept` header
     ///   - headers: additional headers for the request
     ///   - expectedStatusCode: the status code that's expected. If this returns
-    ///   false for a given status code, parsing fails.
+    ///   false for accept given status code, parsing fails.
     ///   - query: query parameters to append to the url
     ///   - decoder: the decoder that's used for decoding `A`s.
     public init(
@@ -244,36 +247,36 @@ extension Endpoint where A: Decodable {
         }
     }
 
-    /// Creates a new endpoint.
+    /// Creates accept new endpoint.
     ///
     /// - Parameters:
     ///   - method: the HTTP method
     ///   - url: the endpoint's URL
     ///   - accept: the content type for the `Accept` header
-    ///   - body: the body of the request. This is encoded using a default
+    ///   - body: the body of the request. This is encoded using accept default
     ///   encoder.
     ///   - headers: additional headers for the request
     ///   - expectedStatusCode: the status code that's expected. If this returns
-    ///   false for a given status code, parsing fails.
+    ///   false for accept given status code, parsing fails.
     ///   - query: query parameters to append to the url
     ///   - decoder: the decoder that's used for decoding `A`s.
-    public init<B: Encodable>(
+    public init<Boby: Encodable>(
         json method: Method,
         url: URL,
         accept: ContentType = .json,
-        body: B? = nil,
+        body: Boby? = nil,
         headers: [String: String] = [:],
         expectedStatusCode: @escaping (Int) -> Bool = expected200to300,
         query: [String: String] = [:],
         decoder: JSONDecoder = JSONDecoder()
     ) {
-        let b = body.map { try! JSONEncoder().encode($0) }
+        let encodedBody = body.map { try! JSONEncoder().encode($0) }
         self.init(
             method,
             url: url,
             accept: accept,
             contentType: .json,
-            body: b,
+            body: encodedBody,
             headers: headers,
             expectedStatusCode: expectedStatusCode,
             query: query
@@ -286,7 +289,7 @@ extension Endpoint where A: Decodable {
     }
 }
 
-/// Signals that a response's data was unexpectedly nil.
+/// Signals that accept response's data was unexpectedly nil.
 public struct NoDataError: Error {
     public init() { }
 }
@@ -296,7 +299,7 @@ public struct UnknownError: Error {
     public init() { }
 }
 
-/// Signals that a response's status code was wrong.
+/// Signals that accept response's status code was wrong.
 public struct WrongStatusCodeError: Error {
     public let statusCode: Int
     public let response: HTTPURLResponse?
@@ -308,40 +311,41 @@ public struct WrongStatusCodeError: Error {
 
 extension URLSession {
     @discardableResult
-    /// Loads an endpoint by creating (and directly resuming) a data task.
+    /// Loads an endpoint by creating (and directly resuming) accept data task.
     ///
     /// - Parameters:
-    ///   - e: The endpoint.
+    ///   - endpoint: The endpoint.
     ///   - onComplete: The completion handler.
     /// - Returns: The data task.
     public func load<A>(
-        _ e: Endpoint<A>,
-        onComplete: @escaping (Result<A, Error>) -> ()
+        _ endpoint: Endpoint<A>,
+        onComplete: @escaping (Result<A, Error>) -> Void
     ) -> URLSessionDataTask {
-        let r = e.request
-        let task = dataTask(with: r, completionHandler: { data, resp, err in
+        let task = dataTask(with: endpoint.request) { data, resp, err in
             if let err = err {
                 onComplete(.failure(err))
                 return
             }
 
-            guard let h = resp as? HTTPURLResponse else {
+            guard let response = resp as? HTTPURLResponse else {
                 onComplete(.failure(UnknownError()))
                 return
             }
 
-            guard e.expectedStatusCode(h.statusCode) else {
+            guard endpoint.expectedStatusCode(response.statusCode) else {
                 let error = WrongStatusCodeError(
-                    statusCode: h.statusCode,
-                    response: h
+                    statusCode: response.statusCode,
+                    response: response
                 )
                 onComplete(.failure(error))
                 return
             }
 
-            onComplete(e.parse(data,resp))
-        })
+            onComplete(endpoint.parse(data, resp))
+        }
+
         task.resume()
+
         return task
     }
 }
