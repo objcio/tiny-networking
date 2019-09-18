@@ -11,7 +11,8 @@ public func expected200to300(_ code: Int) -> Bool {
     return code >= 200 && code < 300
 }
 
-/// This describes an endpoint returning `A` values. It contains both a `URLRequest` and a way to parse the response.
+/// This describes an endpoint returning `A` values. It contains both a
+/// `URLRequest` and a way to parse the response.
 public struct Endpoint<A> {
 
     /// The HTTP Method
@@ -34,16 +35,22 @@ public struct Endpoint<A> {
 
     /// Transforms the result
     public func map<B>(_ f: @escaping (A) -> B) -> Endpoint<B> {
-        return Endpoint<B>(request: request, expectedStatusCode: expectedStatusCode, parse: { value, response in
+        return Endpoint<B>(
+            request: request,
+            expectedStatusCode: expectedStatusCode
+        ) { value, response in
             self.parse(value, response).map(f)
-        })
+        }
     }
 
     /// Transforms the result
     public func compactMap<B>(_ transform: @escaping (A) -> Result<B, Error>) -> Endpoint<B> {
-        return Endpoint<B>(request: request, expectedStatusCode: expectedStatusCode, parse: { data, response in
+        return Endpoint<B>(
+            request: request,
+            expectedStatusCode: expectedStatusCode
+        ) { data, response in
             self.parse(data, response).flatMap(transform)
-        })
+        }
     }
 
     /// Create a new Endpoint.
@@ -55,18 +62,32 @@ public struct Endpoint<A> {
     ///   - contentType: the content type for the `Content-Type` header
     ///   - body: the body of the request.
     ///   - headers: additional headers for the request
-    ///   - expectedStatusCode: the status code that's expected. If this returns false for a given status code, parsing fails.
+    ///   - expectedStatusCode: the status code that's expected. If this returns
+    ///   false for a given status code, parsing fails.
     ///   - timeOutInterval: the timeout interval for his request
     ///   - query: query parameters to append to the url
     ///   - parse: this converts a response into an `A`.
-    public init(_ method: Method, url: URL, accept: ContentType? = nil, contentType: ContentType? = nil, body: Data? = nil, headers: [String:String] = [:], expectedStatusCode: @escaping (Int) -> Bool = expected200to300, timeOutInterval: TimeInterval = 10, query: [String:String] = [:], parse: @escaping (Data?, URLResponse?) -> Result<A, Error>) {
+    public init(
+        _ method: Method,
+        url: URL,
+        accept: ContentType? = nil,
+        contentType: ContentType? = nil,
+        body: Data? = nil,
+        headers: [String:String] = [:],
+        expectedStatusCode: @escaping (Int) -> Bool = expected200to300,
+        timeOutInterval: TimeInterval = 10,
+        query: [String:String] = [:],
+        parse: @escaping (Data?, URLResponse?) -> Result<A, Error>
+    ) {
         var requestUrl : URL
         if query.isEmpty {
             requestUrl = url
         } else {
             var comps = URLComponents(url: url, resolvingAgainstBaseURL: true)!
             comps.queryItems = comps.queryItems ?? []
-            comps.queryItems!.append(contentsOf: query.map { URLQueryItem(name: $0.0, value: $0.1) })
+            comps.queryItems!.append(
+                contentsOf: query.map { URLQueryItem(name: $0.0, value: $0.1) }
+            )
             requestUrl = comps.url!
         }
         request = URLRequest(url: requestUrl)
@@ -82,7 +103,8 @@ public struct Endpoint<A> {
         request.timeoutInterval = timeOutInterval
         request.httpMethod = method.rawValue
 
-        // body *needs* to be the last property that we set, because of this bug: https://bugs.swift.org/browse/SR-6687
+        // body *needs* to be the last property that we set, because of this
+        // bug: https://bugs.swift.org/browse/SR-6687
         request.httpBody = body
 
         self.expectedStatusCode = expectedStatusCode
@@ -94,9 +116,14 @@ public struct Endpoint<A> {
     ///
     /// - Parameters:
     ///   - request: the URL request
-    ///   - expectedStatusCode: the status code that's expected. If this returns false for a given status code, parsing fails.
+    ///   - expectedStatusCode: the status code that's expected. If this returns
+    ///   false for a given status code, parsing fails.
     ///   - parse: this converts a response into an `A`.
-    public init(request: URLRequest, expectedStatusCode: @escaping (Int) -> Bool = expected200to300, parse: @escaping (Data?, URLResponse?) -> Result<A, Error>) {
+    public init(
+        request: URLRequest,
+        expectedStatusCode: @escaping (Int) -> Bool = expected200to300,
+        parse: @escaping (Data?, URLResponse?) -> Result<A, Error>
+    ) {
         self.request = request
         self.expectedStatusCode = expectedStatusCode
         self.parse = parse
@@ -120,10 +147,26 @@ extension Endpoint where A == () {
     ///   - url: the endpoint's URL
     ///   - accept: the content type for the `Accept` header
     ///   - headers: additional headers for the request
-    ///   - expectedStatusCode: the status code that's expected. If this returns false for a given status code, parsing fails.
+    ///   - expectedStatusCode: the status code that's expected. If this returns
+    ///   false for a given status code, parsing fails.
     ///   - query: query parameters to append to the url
-    public init(_ method: Method, url: URL, accept: ContentType? = nil, headers: [String:String] = [:], expectedStatusCode: @escaping (Int) -> Bool = expected200to300, query: [String:String] = [:]) {
-        self.init(method, url: url, accept: accept, headers: headers, expectedStatusCode: expectedStatusCode, query: query, parse: { _, _ in .success(()) })
+    public init(
+        _ method: Method,
+        url: URL,
+        accept: ContentType? = nil,
+        headers: [String:String] = [:],
+        expectedStatusCode: @escaping (Int) -> Bool = expected200to300,
+        query: [String:String] = [:]
+    ) {
+        self.init(
+            method,
+            url: url,
+            accept: accept,
+            headers: headers,
+            expectedStatusCode: expectedStatusCode,
+            query: query,
+            parse: { _, _ in .success(()) }
+        )
     }
 
     /// Creates a new endpoint without a parse function.
@@ -132,13 +175,33 @@ extension Endpoint where A == () {
     ///   - json: the HTTP method
     ///   - url: the endpoint's URL
     ///   - accept: the content type for the `Accept` header
-    ///   - body: the body of the request. This gets encoded using a default `JSONEncoder` instance.
+    ///   - body: the body of the request. This gets encoded using a default
+    ///   `JSONEncoder` instance.
     ///   - headers: additional headers for the request
-    ///   - expectedStatusCode: the status code that's expected. If this returns false for a given status code, parsing fails.
+    ///   - expectedStatusCode: the status code that's expected. If this returns
+    ///   false for a given status code, parsing fails.
     ///   - query: query parameters to append to the url
-    public init<B: Encodable>(json method: Method, url: URL, accept: ContentType? = .json, body: B, headers: [String:String] = [:], expectedStatusCode: @escaping (Int) -> Bool = expected200to300, query: [String:String] = [:]) {
+    public init<B: Encodable>(
+        json method: Method,
+        url: URL,
+        accept: ContentType? = .json,
+        body: B,
+        headers: [String:String] = [:],
+        expectedStatusCode: @escaping (Int) -> Bool = expected200to300,
+        query: [String:String] = [:]
+    ) {
         let b = try! JSONEncoder().encode(body)
-        self.init(method, url: url, accept: accept, contentType: .json, body: b, headers: headers, expectedStatusCode: expectedStatusCode, query: query, parse: { _, _ in .success(()) })
+        self.init(
+            method,
+            url: url,
+            accept: accept,
+            contentType: .json,
+            body: b,
+            headers: headers,
+            expectedStatusCode: expectedStatusCode,
+            query: query,
+            parse: { _, _ in .success(()) }
+        )
     }
 }
 
@@ -151,11 +214,28 @@ extension Endpoint where A: Decodable {
     ///   - url: the endpoint's URL
     ///   - accept: the content type for the `Accept` header
     ///   - headers: additional headers for the request
-    ///   - expectedStatusCode: the status code that's expected. If this returns false for a given status code, parsing fails.
+    ///   - expectedStatusCode: the status code that's expected. If this returns
+    ///   false for a given status code, parsing fails.
     ///   - query: query parameters to append to the url
     ///   - decoder: the decoder that's used for decoding `A`s.
-    public init(json method: Method, url: URL, accept: ContentType = .json, headers: [String: String] = [:], expectedStatusCode: @escaping (Int) -> Bool = expected200to300, query: [String: String] = [:], decoder: JSONDecoder = JSONDecoder()) {
-        self.init(method, url: url, accept: accept, body: nil, headers: headers, expectedStatusCode: expectedStatusCode, query: query) { data, _ in
+    public init(
+        json method: Method,
+        url: URL,
+        accept: ContentType = .json,
+        headers: [String: String] = [:],
+        expectedStatusCode: @escaping (Int) -> Bool = expected200to300,
+        query: [String: String] = [:],
+        decoder: JSONDecoder = JSONDecoder()
+    ) {
+        self.init(
+            method,
+            url: url,
+            accept: accept,
+            body: nil,
+            headers: headers,
+            expectedStatusCode: expectedStatusCode,
+            query: query
+        ) { data, _ in
             return Result {
                 guard let dat = data else { throw NoDataError() }
                 return try decoder.decode(A.self, from: dat)
@@ -169,14 +249,34 @@ extension Endpoint where A: Decodable {
     ///   - method: the HTTP method
     ///   - url: the endpoint's URL
     ///   - accept: the content type for the `Accept` header
-    ///   - body: the body of the request. This is encoded using a default encoder.
+    ///   - body: the body of the request. This is encoded using a default
+    ///   encoder.
     ///   - headers: additional headers for the request
-    ///   - expectedStatusCode: the status code that's expected. If this returns false for a given status code, parsing fails.
+    ///   - expectedStatusCode: the status code that's expected. If this returns
+    ///   false for a given status code, parsing fails.
     ///   - query: query parameters to append to the url
     ///   - decoder: the decoder that's used for decoding `A`s.
-    public init<B: Encodable>(json method: Method, url: URL, accept: ContentType = .json, body: B? = nil, headers: [String: String] = [:], expectedStatusCode: @escaping (Int) -> Bool = expected200to300, query: [String: String] = [:], decoder: JSONDecoder = JSONDecoder()) {
+    public init<B: Encodable>(
+        json method: Method,
+        url: URL,
+        accept: ContentType = .json,
+        body: B? = nil,
+        headers: [String: String] = [:],
+        expectedStatusCode: @escaping (Int) -> Bool = expected200to300,
+        query: [String: String] = [:],
+        decoder: JSONDecoder = JSONDecoder()
+    ) {
         let b = body.map { try! JSONEncoder().encode($0) }
-        self.init(method, url: url, accept: accept, contentType: .json, body: b, headers: headers, expectedStatusCode: expectedStatusCode, query: query) { data, _ in
+        self.init(
+            method,
+            url: url,
+            accept: accept,
+            contentType: .json,
+            body: b,
+            headers: headers,
+            expectedStatusCode: expectedStatusCode,
+            query: query
+        ) { data, _ in
             return Result {
                 guard let dat = data else { throw NoDataError() }
                 return try decoder.decode(A.self, from: dat)
@@ -213,7 +313,10 @@ extension URLSession {
     ///   - e: The endpoint.
     ///   - onComplete: The completion handler.
     /// - Returns: The data task.
-    public func load<A>(_ e: Endpoint<A>, onComplete: @escaping (Result<A, Error>) -> ()) -> URLSessionDataTask {
+    public func load<A>(
+        _ e: Endpoint<A>,
+        onComplete: @escaping (Result<A, Error>) -> ()
+    ) -> URLSessionDataTask {
         let r = e.request
         let task = dataTask(with: r, completionHandler: { data, resp, err in
             if let err = err {
@@ -227,7 +330,11 @@ extension URLSession {
             }
 
             guard e.expectedStatusCode(h.statusCode) else {
-                onComplete(.failure(WrongStatusCodeError(statusCode: h.statusCode, response: h)))
+                let error = WrongStatusCodeError(
+                    statusCode: h.statusCode,
+                    response: h
+                )
+                onComplete(.failure(error))
                 return
             }
 
