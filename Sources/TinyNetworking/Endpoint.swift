@@ -13,7 +13,7 @@ public func expected200to300(_ code: Int) -> Bool {
 
 /// This describes an endpoint returning `A` values. It contains both a `URLRequest` and a way to parse the response.
 public struct Endpoint<A> {
-    
+
     /// The HTTP Method
     public enum Method: String {
         case get = "GET"
@@ -22,16 +22,16 @@ public struct Endpoint<A> {
         case patch = "PATCH"
         case delete = "DELETE"
     }
-    
+
     /// The request for this endpoint
     public var request: URLRequest
-    
+
     /// This is used to (try to) parse a response into an `A`.
     var parse: (Data?, URLResponse?) -> Result<A, Error>
-    
+
     /// This is used to check the status code of a response.
     var expectedStatusCode: (Int) -> Bool = expected200to300
-    
+
     /// Transforms the result
     public func map<B>(_ f: @escaping (A) -> B) -> Endpoint<B> {
         return Endpoint<B>(request: request, expectedStatusCode: expectedStatusCode, parse: { value, response in
@@ -88,8 +88,8 @@ public struct Endpoint<A> {
         self.expectedStatusCode = expectedStatusCode
         self.parse = parse
     }
-    
-    
+
+
     /// Creates a new Endpoint from a request
     ///
     /// - Parameters:
@@ -205,7 +205,7 @@ public struct WrongStatusCodeError: Error {
     }
 }
 
-extension URLSession {    
+extension URLSession {
     @discardableResult
     /// Loads an endpoint by creating (and directly resuming) a data task.
     ///
@@ -220,21 +220,20 @@ extension URLSession {
                 onComplete(.failure(err))
                 return
             }
-            
+
             guard let h = resp as? HTTPURLResponse else {
                 onComplete(.failure(UnknownError()))
                 return
             }
-            
+
             guard e.expectedStatusCode(h.statusCode) else {
                 onComplete(.failure(WrongStatusCodeError(statusCode: h.statusCode, response: h)))
                 return
             }
-            
+
             onComplete(e.parse(data,resp))
         })
         task.resume()
         return task
     }
 }
-
