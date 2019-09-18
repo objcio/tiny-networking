@@ -73,10 +73,10 @@ public struct Endpoint<A> {
         accept: ContentType? = nil,
         contentType: ContentType? = nil,
         body: Data? = nil,
-        headers: [String:String] = [:],
+        headers: [String: String] = [:],
         expectedStatusCode: @escaping (Int) -> Bool = expected200to300,
         timeOutInterval: TimeInterval = 10,
-        query: [String:String] = [:],
+        query: [String: String] = [:],
         parse: @escaping (Data?, URLResponse?) -> Result<A, Error>
     ) {
         var requestUrl : URL
@@ -154,9 +154,9 @@ extension Endpoint where A == () {
         _ method: Method,
         url: URL,
         accept: ContentType? = nil,
-        headers: [String:String] = [:],
+        headers: [String: String] = [:],
         expectedStatusCode: @escaping (Int) -> Bool = expected200to300,
-        query: [String:String] = [:]
+        query: [String: String] = [:]
     ) {
         self.init(
             method,
@@ -186,9 +186,9 @@ extension Endpoint where A == () {
         url: URL,
         accept: ContentType? = .json,
         body: B,
-        headers: [String:String] = [:],
+        headers: [String: String] = [:],
         expectedStatusCode: @escaping (Int) -> Bool = expected200to300,
-        query: [String:String] = [:]
+        query: [String: String] = [:]
     ) {
         let b = try! JSONEncoder().encode(body)
         self.init(
