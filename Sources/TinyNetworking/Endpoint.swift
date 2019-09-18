@@ -25,7 +25,7 @@ public struct Endpoint<A> {
     }
 
     /// The request for this endpoint
-    public var request: URLRequest
+    public let request: URLRequest
 
     /// This is used to (try to) parse a response into an `A`.
     var parse: (Data?, URLResponse?) -> Result<A, Error>
@@ -90,7 +90,7 @@ public struct Endpoint<A> {
             )
             requestUrl = comps.url!
         }
-        request = URLRequest(url: requestUrl)
+        var request = URLRequest(url: requestUrl)
         if let a = accept {
             request.setValue(a.rawValue, forHTTPHeaderField: "Accept")
         }
@@ -107,6 +107,7 @@ public struct Endpoint<A> {
         // bug: https://bugs.swift.org/browse/SR-6687
         request.httpBody = body
 
+        self.request = request
         self.expectedStatusCode = expectedStatusCode
         self.parse = parse
     }
