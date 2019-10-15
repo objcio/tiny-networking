@@ -1,5 +1,9 @@
 import Foundation
 
+#if canImport(Combine)
+import Combine
+#endif
+
 /// Built-in Content Types
 public enum ContentType: String {
     case json = "application/json"
@@ -238,3 +242,27 @@ extension URLSession {
     }
 }
 
+@available(iOS 11, macOS 10.13, *)
+extension URLSession {
+    /// Returns a publisher that wraps a URL session data task for a given Endpoint.
+    ///
+    /// - Parameters:
+    ///   - e: The endpoint.
+    /// - Returns: The publisher of a dataTask.
+    public func load<A>(_ e: Endpoint<A>) -> AnyPublisher<A, Error> {
+        let r = e.request
+        return dataTaskPublisher(for: r)
+            .tryMap { (data, resp) in
+                guard let h = resp as? HTTPURLResponse else {
+                    throw UnknownError()
+                }
+
+                guard e.expectedStatusCode(h.statusCode) else {
+                    throw WrongStatusCodeError(statusCode: h.statusCode, response: h)
+                }
+
+                return try e.parse(data, resp).get()
+            }
+            .eraseToAnyPublisher()
+    }
+}
