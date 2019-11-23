@@ -136,8 +136,9 @@ extension Endpoint where A == () {
     ///   - headers: additional headers for the request
     ///   - expectedStatusCode: the status code that's expected. If this returns false for a given status code, parsing fails.
     ///   - query: query parameters to append to the url
-    public init<B: Encodable>(json method: Method, url: URL, accept: ContentType? = .json, body: B, headers: [String:String] = [:], expectedStatusCode: @escaping (Int) -> Bool = expected200to300, query: [String:String] = [:]) {
-        let b = try! JSONEncoder().encode(body)
+    ///   - encoder: the encoder that's used for encoding `A`s.
+    public init<B: Encodable>(json method: Method, url: URL, accept: ContentType? = .json, body: B, headers: [String:String] = [:], expectedStatusCode: @escaping (Int) -> Bool = expected200to300, query: [String:String] = [:], encoder: JSONEncoder = JSONEncoder()) {
+        let b = try! encoder.encode(body)
         self.init(method, url: url, accept: accept, contentType: .json, body: b, headers: headers, expectedStatusCode: expectedStatusCode, query: query, parse: { _, _ in .success(()) })
     }
 }
@@ -174,8 +175,9 @@ extension Endpoint where A: Decodable {
     ///   - expectedStatusCode: the status code that's expected. If this returns false for a given status code, parsing fails.
     ///   - query: query parameters to append to the url
     ///   - decoder: the decoder that's used for decoding `A`s.
-    public init<B: Encodable>(json method: Method, url: URL, accept: ContentType = .json, body: B? = nil, headers: [String: String] = [:], expectedStatusCode: @escaping (Int) -> Bool = expected200to300, query: [String: String] = [:], decoder: JSONDecoder = JSONDecoder()) {
-        let b = body.map { try! JSONEncoder().encode($0) }
+    ///   - encoder: the encoder that's used for encoding `A`s.
+    public init<B: Encodable>(json method: Method, url: URL, accept: ContentType = .json, body: B? = nil, headers: [String: String] = [:], expectedStatusCode: @escaping (Int) -> Bool = expected200to300, query: [String: String] = [:], decoder: JSONDecoder = JSONDecoder(), encoder: JSONEncoder = JSONEncoder()) {
+        let b = body.map { try! encoder.encode($0) }
         self.init(method, url: url, accept: accept, contentType: .json, body: b, headers: headers, expectedStatusCode: expectedStatusCode, query: query) { data, _ in
             return Result {
                 guard let dat = data else { throw NoDataError() }
