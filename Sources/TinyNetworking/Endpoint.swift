@@ -119,27 +119,32 @@ extension Endpoint where A == () {
     ///   - method: the HTTP method
     ///   - url: the endpoint's URL
     ///   - accept: the content type for the `Accept` header
+    ///   - contentType: the content type for the `Content-Type` header
+    ///   - body: the body of the request.
     ///   - headers: additional headers for the request
     ///   - expectedStatusCode: the status code that's expected. If this returns false for a given status code, parsing fails.
+    ///   - timeOutInterval: the timeout interval for his request
     ///   - query: query parameters to append to the url
-    public init(_ method: Method, url: URL, accept: ContentType? = nil, headers: [String:String] = [:], expectedStatusCode: @escaping (Int) -> Bool = expected200to300, query: [String:String] = [:]) {
-        self.init(method, url: url, accept: accept, headers: headers, expectedStatusCode: expectedStatusCode, query: query, parse: { _, _ in .success(()) })
+    public init(_ method: Method, url: URL, accept: ContentType? = nil, contentType: ContentType? = nil, body: Data? = nil, headers: [String:String] = [:], expectedStatusCode: @escaping (Int) -> Bool = expected200to300, timeOutInterval: TimeInterval = 10, query: [String:String] = [:]) {
+        self.init(method, url: url, accept: accept, contentType: contentType, body: body, headers: headers, expectedStatusCode: expectedStatusCode, timeOutInterval: timeOutInterval, query: query, parse: { _, _ in .success(()) })
     }
 
     /// Creates a new endpoint without a parse function.
     ///
     /// - Parameters:
+    ///   - method: the HTTP method
     ///   - json: the HTTP method
     ///   - url: the endpoint's URL
     ///   - accept: the content type for the `Accept` header
     ///   - body: the body of the request. This gets encoded using a default `JSONEncoder` instance.
     ///   - headers: additional headers for the request
     ///   - expectedStatusCode: the status code that's expected. If this returns false for a given status code, parsing fails.
+    ///   - timeOutInterval: the timeout interval for his request
     ///   - query: query parameters to append to the url
     ///   - encoder: the encoder that's used for encoding `A`s.
-    public init<B: Encodable>(json method: Method, url: URL, accept: ContentType? = .json, body: B, headers: [String:String] = [:], expectedStatusCode: @escaping (Int) -> Bool = expected200to300, query: [String:String] = [:], encoder: JSONEncoder = JSONEncoder()) {
+    public init<B: Encodable>(json method: Method, url: URL, accept: ContentType? = .json, body: B, headers: [String:String] = [:], expectedStatusCode: @escaping (Int) -> Bool = expected200to300, timeOutInterval: TimeInterval = 10, query: [String:String] = [:], encoder: JSONEncoder = JSONEncoder()) {
         let b = try! encoder.encode(body)
-        self.init(method, url: url, accept: accept, contentType: .json, body: b, headers: headers, expectedStatusCode: expectedStatusCode, query: query, parse: { _, _ in .success(()) })
+        self.init(method, url: url, accept: accept, contentType: .json, body: b, headers: headers, expectedStatusCode: expectedStatusCode, timeOutInterval: timeOutInterval, query: query, parse: { _, _ in .success(()) })
     }
 }
 
@@ -153,10 +158,11 @@ extension Endpoint where A: Decodable {
     ///   - accept: the content type for the `Accept` header
     ///   - headers: additional headers for the request
     ///   - expectedStatusCode: the status code that's expected. If this returns false for a given status code, parsing fails.
+    ///   - timeOutInterval: the timeout interval for his request
     ///   - query: query parameters to append to the url
     ///   - decoder: the decoder that's used for decoding `A`s.
-    public init(json method: Method, url: URL, accept: ContentType = .json, headers: [String: String] = [:], expectedStatusCode: @escaping (Int) -> Bool = expected200to300, query: [String: String] = [:], decoder: JSONDecoder = JSONDecoder()) {
-        self.init(method, url: url, accept: accept, body: nil, headers: headers, expectedStatusCode: expectedStatusCode, query: query) { data, _ in
+    public init(json method: Method, url: URL, accept: ContentType = .json, headers: [String: String] = [:], expectedStatusCode: @escaping (Int) -> Bool = expected200to300, timeOutInterval: TimeInterval = 10, query: [String: String] = [:], decoder: JSONDecoder = JSONDecoder()) {
+        self.init(method, url: url, accept: accept, body: nil, headers: headers, expectedStatusCode: expectedStatusCode, timeOutInterval: timeOutInterval, query: query) { data, _ in
             return Result {
                 guard let dat = data else { throw NoDataError() }
                 return try decoder.decode(A.self, from: dat)
@@ -173,12 +179,13 @@ extension Endpoint where A: Decodable {
     ///   - body: the body of the request. This is encoded using a default encoder.
     ///   - headers: additional headers for the request
     ///   - expectedStatusCode: the status code that's expected. If this returns false for a given status code, parsing fails.
+    ///   - timeOutInterval: the timeout interval for his request
     ///   - query: query parameters to append to the url
     ///   - decoder: the decoder that's used for decoding `A`s.
     ///   - encoder: the encoder that's used for encoding `A`s.
-    public init<B: Encodable>(json method: Method, url: URL, accept: ContentType = .json, body: B? = nil, headers: [String: String] = [:], expectedStatusCode: @escaping (Int) -> Bool = expected200to300, query: [String: String] = [:], decoder: JSONDecoder = JSONDecoder(), encoder: JSONEncoder = JSONEncoder()) {
+    public init<B: Encodable>(json method: Method, url: URL, accept: ContentType = .json, body: B? = nil, headers: [String: String] = [:], expectedStatusCode: @escaping (Int) -> Bool = expected200to300, timeOutInterval: TimeInterval = 10, query: [String: String] = [:], decoder: JSONDecoder = JSONDecoder(), encoder: JSONEncoder = JSONEncoder()) {
         let b = body.map { try! encoder.encode($0) }
-        self.init(method, url: url, accept: accept, contentType: .json, body: b, headers: headers, expectedStatusCode: expectedStatusCode, query: query) { data, _ in
+        self.init(method, url: url, accept: accept, contentType: .json, body: b, headers: headers, expectedStatusCode: expectedStatusCode, timeOutInterval: timeOutInterval, query: query) { data, _ in
             return Result {
                 guard let dat = data else { throw NoDataError() }
                 return try decoder.decode(A.self, from: dat)
