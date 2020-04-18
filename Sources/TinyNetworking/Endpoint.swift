@@ -261,7 +261,7 @@ extension URLSession {
                 }
 
                 guard e.expectedStatusCode(h.statusCode) else {
-                    throw WrongStatusCodeError(statusCode: h.statusCode, response: h)
+                    throw WrongStatusCodeError(statusCode: h.statusCode, response: h, responseBody: data)
                 }
 
                 return try e.parse(data, resp).get()
