@@ -201,9 +201,11 @@ public struct UnknownError: Error {
 public struct WrongStatusCodeError: Error {
     public let statusCode: Int
     public let response: HTTPURLResponse?
-    public init(statusCode: Int, response: HTTPURLResponse?) {
+    public let responseBody: Data?
+    public init(statusCode: Int, response: HTTPURLResponse?, responseBody: Data?) {
         self.statusCode = statusCode
         self.response = response
+        self.responseBody = responseBody
     }
 }
 
@@ -229,7 +231,7 @@ extension URLSession {
             }
             
             guard e.expectedStatusCode(h.statusCode) else {
-                onComplete(.failure(WrongStatusCodeError(statusCode: h.statusCode, response: h)))
+                onComplete(.failure(WrongStatusCodeError(statusCode: h.statusCode, response: h, responseBody: data)))
                 return
             }
             
