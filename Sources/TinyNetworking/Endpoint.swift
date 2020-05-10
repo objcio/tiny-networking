@@ -7,6 +7,7 @@ import FoundationNetworking
 public enum ContentType: String {
     case json = "application/json"
     case xml = "application/xml"
+    case formUrlEncoded = "application/x-www-form-urlencoded"
 }
 
 /// Returns `true` if `code` is in the 200..<300 range.
