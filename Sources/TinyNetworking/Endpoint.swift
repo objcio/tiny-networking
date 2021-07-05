@@ -281,3 +281,20 @@ extension URLSession {
     }
 }
 #endif
+
+@available(iOS 15, macOS 12.0, watchOS 8, tvOS 15, *)
+public extension URLSession {
+    /// Loads the contents of a `Endpoint` and delivers the data asynchronously.
+    /// - Returns: The parsed `A` value specified in `Endpoint`
+    func load<A>(_ e: Endpoint<A>) async throws -> A {
+        let request = e.request
+        let (data, resp) = try await data(for: request)
+        guard let h = resp as? HTTPURLResponse else {
+            throw UnknownError()
+        }
+        guard e.expectedStatusCode(h.statusCode) else {
+            throw WrongStatusCodeError(statusCode: h.statusCode, response: h, responseBody: data)
+        }
+        return try e.parse(data, resp).get()
+    }
+}
