@@ -31,6 +31,11 @@ URLSession.shared.load(endpoint) { result in
 }
 ```
 
+Alternatively, you can use the async/await option.
+```swift
+let result = try await URLSession.shared.load(endpoint)
+``` 
+
 ## Authenticated Endpoints
 
 Here's an example of how you can have authenticated endpoints. You initialize the `Mailchimp` struct with an API key, and use that to compute an `authHeader`. You can then use the `authHeader` when you create endpoints.
