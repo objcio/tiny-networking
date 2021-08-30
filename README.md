@@ -97,6 +97,10 @@ XCTAssertThrows(try Endpoint(imageURL: someURL).parse(invalidData, nil).get())
 XCTAssertNoThrow(try Endpoint(imageURL: someURL).parse(validData, nil).get())
 ```
 
+## Combine
+
+Hsieh Min Che created a library that adds Combine endpoints to this library: https://github.com/Hsieh-1989/CombinedEndpoint
+
 ## More Examples
 
 - In the [Swift Talk](https://talk.objc.io) backend, this is used to wrap [third-party services](https://github.com/objcio/swift-talk-backend/tree/master/Sources/SwiftTalkServerLib/ThirdPartyServices).
