@@ -283,7 +283,7 @@ extension URLSession {
 #endif
 
 #if swift(>=5.5)
-@available(iOS 15, macOS 12.0, watchOS 8, tvOS 15, *)
+@available(iOS 13, macOS 12.0, watchOS 8, tvOS 15, *)
 public extension URLSession {
     /// Loads the contents of a `Endpoint` and delivers the data asynchronously.
     /// - Returns: The parsed `A` value specified in `Endpoint`
