@@ -289,7 +289,7 @@ public extension URLSession {
     /// - Returns: The parsed `A` value specified in `Endpoint`
     func load<A>(_ e: Endpoint<A>) async throws -> A {
         let request = e.request
-        let (data, resp) = try await data(for: request)
+        let (data, resp) = try await self.data(for: request)
         guard let h = resp as? HTTPURLResponse else {
             throw UnknownError()
         }
