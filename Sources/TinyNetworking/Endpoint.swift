@@ -282,7 +282,7 @@ extension URLSession {
 }
 #endif
 
-#if swift(>=5.5)
+#if swift(>=5.5) && canImport(Darwin)
 @available(iOS 15, macOS 12.0, watchOS 8, tvOS 15, *)
 public extension URLSession {
     /// Loads the contents of a `Endpoint` and delivers the data asynchronously.
