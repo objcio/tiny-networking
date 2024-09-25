@@ -220,68 +220,6 @@ public struct WrongStatusCodeError: Error {
     }
 }
 
-extension URLSession {    
-    @discardableResult
-    /// Loads an endpoint by creating (and directly resuming) a data task.
-    ///
-    /// - Parameters:
-    ///   - e: The endpoint.
-    ///   - onComplete: The completion handler.
-    /// - Returns: The data task.
-    public func load<A>(_ e: Endpoint<A>, onComplete: @escaping (Result<A, Error>) -> ()) -> URLSessionDataTask {
-        let r = e.request
-        let task = dataTask(with: r, completionHandler: { data, resp, err in
-            if let err = err {
-                onComplete(.failure(err))
-                return
-            }
-            
-            guard let h = resp as? HTTPURLResponse else {
-                onComplete(.failure(UnknownError()))
-                return
-            }
-            
-            guard e.expectedStatusCode(h.statusCode) else {
-                onComplete(.failure(WrongStatusCodeError(statusCode: h.statusCode, response: h, responseBody: data)))
-                return
-            }
-            
-            onComplete(e.parse(data,resp))
-        })
-        task.resume()
-        return task
-    }
-}
-
-#if canImport(Combine)
-import Combine
-
-@available(iOS 13, macOS 10.15, watchOS 6, tvOS 13, *)
-extension URLSession {
-    /// Returns a publisher that wraps a URL session data task for a given Endpoint.
-    ///
-    /// - Parameters:
-    ///   - e: The endpoint.
-    /// - Returns: The publisher of a dataTask.
-    public func load<A>(_ e: Endpoint<A>) -> AnyPublisher<A, Error> {
-        let r = e.request
-        return dataTaskPublisher(for: r)
-            .tryMap { data, resp in
-                guard let h = resp as? HTTPURLResponse else {
-                    throw UnknownError()
-                }
-
-                guard e.expectedStatusCode(h.statusCode) else {
-                    throw WrongStatusCodeError(statusCode: h.statusCode, response: h, responseBody: data)
-                }
-
-                return try e.parse(data, resp).get()
-        }
-        .eraseToAnyPublisher()
-    }
-}
-#endif
-
 #if swift(>=5.5) && canImport(Darwin)
 @available(iOS 15, macOS 12.0, watchOS 8, tvOS 15, *)
 public extension URLSession {
